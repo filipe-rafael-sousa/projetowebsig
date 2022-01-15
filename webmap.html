@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;1,300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="leaflet-heat.js"></script>
+
+
+    <script src="geojson/celoricobasto.geojson"></script>
+    <script src="geojson/alojamentolocal.geojson"></script>
+    <script src="geojson/agentesanimacaoturistica.geojson"></script>
+    <script src="geojson/locaisinteresseturistico.geojson"></script>
+    <script src="geojson/cultura.geojson"></script>
+    <script src="geojson/desporto.geojson"></script>
+    <script src="geojson/postodeturismo.geojson"></script>
+    <script src="geojson/restauracao.geojson"></script>
+    <script src="geojson/enoturismo.geojson"></script>
+    <script src="geojson/patrimonioarqueologico.geojson"></script>
+    <script src="geojson/patrimonioconstruido.geojson"></script>
+    <script src="geojson/espacosverdes.geojson"></script>
+    <script src="geojson/parquesinfantiselazer.geojson"></script>
+    <script src="geojson/estabelecimentosnoturnos.geojson"></script>
+    <script src="geojson/albuffers1km.geojson"></script>
+    <script src="geojson/albuffers500m.geojson"></script>
+    <script src="geojson/ecopista.geojson"></script>
+    <script src="geojson/PR1.geojson"></script>
+    <script src="geojson/PR2.geojson"></script>
+
+
+    <style>html, body, #mapDIV {width: 100%; height: 100%; padding: 0; margin: 0}</style>
+    
+    <title>WebSIG Turismo</title>
+
+</head>
+<body>
+    <div id='mapDIV'>i</div>
+    <script>
+
+        $(document).ready(function(){
+        map.closePopup()});
+
+        
+        //Zoom inicial
+        let map = L.map(document.getElementById('mapDIV'),
+        {center: [41.400000, -8.040000], zoom: 12});
+        
+        
+        //Basemaps
+        let BasemapOSM =L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {attribution: '<a href="http://www.openstreetmap.org" target="_blank">(c)OpenStreetMap </a>'}).addTo(map);
+        let Baserelief = L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png', {});
+        let GoogleRoad = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {});
+        let GoogleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {});
+        let DarkMatter = L.tileLayer('http://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {});
+
+
+        //Escala
+        var scale = L.control.scale()
+        scale.addTo(map);
+
+
+        //Freguesias
+        var thecelorico= L.geoJSON(celorico, {
+        color: '#4F4F4F',
+        weight: 1,
+        dashArray: '12 8 12',
+        onEachFeature: function(feature, layer){
+        layer.bindPopup("<strong>FREGUESIA: </strong>"+feature.properties.Freguesia+"<br><strong>CONCELHO: </strong>"+feature.properties.Concelho);}
+        });
+
+        thecelorico.addTo(map);
+
+        thecelorico.eachLayer(function(layer){
+        layer.openPopup();
+        });
+ 
+
+        //Alojamento local e empreendimentos turísticos
+        var thealojamentolocal= L.geoJSON(alojamento, {
+        pointToLayer:returnalojamento,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome+
+        "<br><strong>RUA: </strong>"+feature.properties.rua+"<br><strong>CÓDIGO POSTAL: </strong>"+
+        feature.properties.codpostal+"<br><strong>LOCALIDADE: </strong>"+feature.properties.localidade+
+        "<br><strong>TIPO: </strong>"+feature.properties.tipo+"<br><strong>MODALIDADE: </strong>"+feature.properties.modalidade+
+        "<br><strong>TELEFONE/TELEMÓVEL: </strong>"+feature.properties.telefone+
+        "<br><strong>EMAIL: </strong>"+feature.properties.email+"<br><strong>WEBSITE: </strong>"+feature.properties.website+
+        "<br><br><img src="+feature.properties.url_rend+">");}
+        });
+
+        function returnalojamento(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#0000FF"})
+        };
+
+        thealojamentolocal.addTo(map);
+
+        thealojamentolocal.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Heat Map AL e ET
+        geoJson2heat = function(geojson) {
+            return geojson.features.map(function(feature) {
+            return [parseFloat(feature.geometry.coordinates[1]), parseFloat(feature.geometry.coordinates[0])];
+            });
+            }
+
+        var geoData = geoJson2heat(alojamento, 1);
+        var heatmapal = new L.heatLayer(geoData,{minOpacity: 0.4,radius: 15, gradient: {0.4: 'blue', 0.5: 'lime', 0.6: 'red'}});
+        map.addLayer(heatmapal);
+
+
+        //Agentes de animação turística
+        var theagentes= L.geoJSON(agentes, {
+        pointToLayer:returnagentes,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome+"<br><strong>TELEFONE/TELEMÓVEL: </strong>"+feature.properties.telefone+
+        "<br><strong>EMAIL: </strong>"+feature.properties.email+"<br><strong>WEBSITE: </strong>"+feature.properties.website);}
+        });
+
+        function returnagentes(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#FF4000"})
+        };
+
+        theagentes.addTo(map);
+
+        theagentes.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Locais de interesse turístico
+
+        //Cultura
+        var thecultura= L.geoJSON(cultura, {
+        pointToLayer:returncultura,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.Designaç+"<br><strong>TIPO: </strong>"+feature.properties.Subcategor+"<br><strong>RUA: </strong>"+
+        feature.properties.rua+"<br><strong>CÓDIGO POSTAL: </strong>"+feature.properties.codpostal);}
+        });
+
+        function returncultura(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#81F79F"})
+        };
+
+        thecultura.addTo(map);
+
+        thecultura.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Desporto
+        var thedesporto= L.geoJSON(desporto, {
+        pointToLayer:returndesporto,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome+"<br><strong>TIPO: </strong>"+feature.properties.tipo+"<br><strong>RUA: </strong>"+feature.properties.rua+
+        "<br><strong>CÓDIGO POSTAL: </strong>"+feature.properties.codpostal+"<br><strong>DESCRIÇÃO: </strong>"+feature.properties.descricao+"<br><strong>CLUBE/ENTIDADE RESPONSÁVEL: </strong>"+
+        feature.properties.club_entid);}
+        });
+
+        function returndesporto(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#2EFEF7"})
+        };
+
+        thedesporto.addTo(map);
+
+        thedesporto.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Posto de turismo
+        var theposto= L.geoJSON(posto, {
+        pointToLayer:returnposto,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome+"<br><strong>RUA: </strong>"+feature.properties.rua+"<br><strong>CÓDIGO POSTAL: </strong>"+
+        feature.properties.codpostal+"<br><strong>TELEFONE/TELEMÓVEL: </strong>"+feature.properties.telef+"<br><strong>EMAIL: </strong>"+feature.properties.email);}
+        });
+
+        function returnposto(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#FFFF00"})
+        };
+
+        theposto.addTo(map);
+
+        theposto.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Restaurantes
+        var therestaurantes= L.geoJSON(restaurantes, {
+        pointToLayer:returnrestaurantes,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome+"<br><strong>RUA: </strong>"+feature.properties.rua+"<br><strong>CÓDIGO POSTAL: </strong>"+
+        feature.properties.codpostal+"<br><strong>TELEFONE/TELEMÓVEL: </strong>"+feature.properties.telef+"<br><strong>EMAIL: </strong>"+feature.properties.email+
+        "<br><strong>WEBSITE: </strong>"+feature.properties.net);}
+        });
+
+        function returnrestaurantes(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#800000"})
+        };
+
+        therestaurantes.addTo(map);
+
+        therestaurantes.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Enoturismo
+        var theenoturismo= L.geoJSON(enoturismo, {
+        pointToLayer:returnenoturismo,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome+"<br><strong>TIPO: </strong>"+feature.properties.tipo+"<br><strong>RUA: </strong>"+feature.properties.rua+
+        "<br><strong>CÓDIGO POSTAL: </strong>"+feature.properties.codpostal+"<br><strong>TELEFONE/TELEMÓVEL: </strong>"+
+        feature.properties.telef+"<br><strong>EMAIL: </strong>"+feature.properties.email+"<br><strong>WEBSITE: </strong>"+feature.properties.net);}
+        });
+
+        function returnenoturismo(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#8B008B"})
+        };
+
+        theenoturismo.addTo(map);
+
+        theenoturismo.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Património arqueológico
+        var thepatrimonioa= L.geoJSON(patrimonioa, {
+        pointToLayer:returnpatrimonioa,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.Toponimo+"<br><strong>CÓDIGO: </strong>"+feature.properties.Sigla+"<br><strong>TIPO: </strong>"+
+        feature.properties.Tipo_Sitio+"<br><strong>CLASSIFICAÇÃO: </strong>"+feature.properties.Classifica+"<br><strong>PERÍODO CRONOLÓGICO: </strong>"+feature.properties.Per_Crono+
+        "<br><strong>ESTADO DE CONSERVAÇÃO: </strong>"+feature.properties.Est_Cons+"<br><strong>CATEGORIA DE VALOR: </strong>"+feature.properties.Categ_valo);}
+        });
+
+        function returnpatrimonioa(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#58FA58"})
+        };
+
+        thepatrimonioa.addTo(map);
+
+        thepatrimonioa.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Património construído
+        var thepatrimonioc= L.geoJSON(patrimonioc, {
+        pointToLayer:returnpatrimonioc,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.Designacao+"<br><strong>CÓDIGO: </strong>"+feature.properties.Codigo_p+"<br><strong>TIPO: </strong>"+
+        feature.properties.Tipologia+"<br><strong>SUBCATEGORIA: </strong>"+feature.properties.Sub_cat_re+"<br><strong>CLASSIFICAÇÃO: </strong>"+feature.properties.Classifica+
+        "<br><strong>PERÍODO CRONOLÓGICO: </strong>"+feature.properties.Cronologia+"<br><strong>CATEGORIA DE VALOR: </strong>"+feature.properties.Niv_valor);}
+        });
+
+        function returnpatrimonioc(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#008080"})
+        };
+
+        thepatrimonioc.addTo(map);
+
+        thepatrimonioc.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Espaços verdes
+        var theespacosv= L.geoJSON(espacosv, {
+        pointToLayer:returnespacosv,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome+"<br><strong>LOCALIZAÇÃO: </strong>"+feature.properties.Localiz+"<br><strong>DESCRIÇÃO: </strong>"+
+        feature.properties.descricao+"<br><strong>ENTIDADE PROPRIETÁRIA: </strong>"+feature.properties.Entid_prop+"<br><strong>ENTIDADE GESTORA: </strong>"+feature.properties.Entid_gest);}
+        });
+
+        function returnespacosv(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#0B610B"})
+        };
+
+        theespacosv.addTo(map);
+
+        theespacosv.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Parques infantis e de lazer
+        var theparquesinfantis= L.geoJSON(parquesinfantis, {
+        pointToLayer:returnparquesinfantis,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome+"<br><strong>LOCALIZAÇÃO: </strong>"+feature.properties.localidade+
+        "<br><strong>ENTIDADE PROPRIETÁRIA: </strong>"+feature.properties.Entid_prop+"<br><strong>ENTIDADE GESTORA: </strong>"+feature.properties.Entid_gest);}
+        });
+
+        function returnparquesinfantis(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#FFA07A"})
+        };
+
+        theparquesinfantis.addTo(map);
+
+        theparquesinfantis.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Estabelecimentos noturnos
+        var theestabelecimentos= L.geoJSON(estabelecimentos, {
+        pointToLayer:returnestabelecimentos,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome+"<br><strong>TIPO: </strong>"+feature.properties.tipo+
+        "<br><strong>FACEBOOK: </strong>"+feature.properties.net);}
+        });
+
+        function returnestabelecimentos(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 8, color:"#8000FF"})
+        };
+
+        theestabelecimentos.addTo(map);
+
+        theestabelecimentos.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Locais de interesse turístico (Total)
+        var thelocaisinteresse= L.geoJSON(locaisinteresse, {
+        pointToLayer:returnlocaisinteresse,
+        onEachFeature: function(feature, layer){
+        }
+        });
+
+        function returnlocaisinteresse(geoJSON, latlng){
+        var att=geoJSON.properties;
+        return L.circleMarker(latlng,{radius: 6, color:"#000000"})
+        };
+
+        thelocaisinteresse.addTo(map);
+
+        thelocaisinteresse.eachLayer(function(layer){
+        });
+
+
+        //Heat Map LIT
+        geoJson2heat = function(geojson) {
+            return geojson.features.map(function(feature) {
+            return [parseFloat(feature.geometry.coordinates[1]), parseFloat(feature.geometry.coordinates[0])];
+            });
+            }
+
+        var geoData = geoJson2heat(locaisinteresse, 1);
+        var heatmaplit = new L.heatLayer(geoData,{minOpacity: 0.4,radius: 15, gradient: {0.4: 'blue', 0.5: 'lime', 0.6: 'red'}});
+        map.addLayer(heatmaplit);
+
+
+        //Buffers Alojamento local e empreendimentos turísticos
+
+        //Buffers 1km
+        var thealbufferskm= L.geoJSON(albufferskm, {
+        color: '#FA8072',
+        weight: 2,
+        onEachFeature: function(feature, layer){
+        layer.bindPopup("<strong>LIT ABRANGIGOS: </strong>"+feature.properties.Join_Count);}
+        });
+
+        thealbufferskm.addTo(map);
+
+        thealbufferskm.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Buffers 500m
+        var thealbuffersm= L.geoJSON(albuffersm, {
+        color: '#87CEEB',
+        weight: 2,
+        onEachFeature: function(feature, layer){
+        layer.bindPopup("<strong>LIT ABRANGIGOS: </strong>"+feature.properties.Join_Count);}
+        });
+
+        thealbuffersm.addTo(map);
+
+        thealbuffersm.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Ecopista Tâmega
+        var theecopista= L.geoJSON(ecopista, {
+        color: '#FF0000',
+        weight: 3,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nomeecopis);}
+        });
+
+        theecopista.addTo(map);
+
+        theecopista.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Percursos pedestres
+
+        //Percurso do Castelo de Arnoia (PR1)
+        var theprcastelo= L.geoJSON(prcastelo, {
+        color: '#FFFF00',
+        weight: 3,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome);}
+        });
+
+        theprcastelo.addTo(map);
+
+        theprcastelo.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Percurso de Borba da Montanha (PR2)
+        var theprborba= L.geoJSON(prborba, {
+        color: '#0080FF',
+        weight: 3,
+        onEachFeature: function(feature, layer){
+        layer.bindTooltip("<strong>NOME: </strong>"+feature.properties.nome);}
+        });
+
+        theprborba.addTo(map);
+
+        theprborba.eachLayer(function(layer){
+        layer.openPopup();
+        });
+
+
+        //Layers
+        var base= {'Basemap Open Street Map':BasemapOSM,
+                'Basemap Open Topo Map':Baserelief,
+                'Basemap Google Roads':GoogleRoad,
+                'Basemap Google Hybrid':GoogleHybrid,
+                'Basemap Dark Matter':DarkMatter};
+
+        var shapes= {    
+            'Agentes de animação turística [6]<br><strong>Locais de Interesse Turístico</strong>':theagentes,     
+            'Enoturismo [12]':theenoturismo,
+            'Espaços verdes [16]':theespacosv,
+            'Estabelecimentos noturnos [2]':theestabelecimentos,
+            'Infraestruturas culturais [6]':thecultura,
+            'Infraestruturas desportivas [43]':thedesporto,
+            'Parques infantis e de lazer [11]':theparquesinfantis,
+            'Património arqueológico [173]':thepatrimonioa,
+            'Património construído [359]':thepatrimonioc,
+            'Posto de turismo [1]':theposto,
+            'Restaurantes [26]':therestaurantes,
+            'LIT <strong>(Total)</strong> [649]<br><strong>Alojamento Local e Empreendimentos Turísticos</strong>':thelocaisinteresse,
+            'AL e ET <strong>(Total)</strong> [116]<br><strong>LIT abrangidos por cada AL ou ET</strong>':thealojamentolocal,
+            'AL e ET Buffers 500m [116]':thealbuffersm,
+            'AL e ET Buffers 1km [116]<br><strong>Ecopistas':thealbufferskm,
+            'Ecopista do Tâmega<br><strong>Percursos pedestres':theecopista,
+            'Percurso do Castelo de Arnoia (PR1)':theprcastelo,
+            'Percurso de Borba da Montanha (PR2)<br><strong>Heat Maps</strong>':theprborba,
+            'Heat Map AL e ET':heatmapal,
+            'Heat Map LIT<br><strong>Limites administrativos</strong>':heatmaplit,
+            'Freguesias [15]':thecelorico};
+        
+                
+        L.control.layers(base, shapes).addTo(map);
+       
+    </script>
+
+</body>
+</html>

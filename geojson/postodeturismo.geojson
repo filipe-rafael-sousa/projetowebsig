@@ -1,0 +1,8 @@
+let posto= {
+"type": "FeatureCollection",
+"name": "postodeturismo",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "gid": 0, "id": null, "tipo": null, "nome": "Loja Interativa de Turismo de Celorico  de Basto", "rua": "Praça Cardeal D. António Ribeiro, 153", "codpostal": "4890-291", "localidade": "Celorico de Basto", "freguesia": "União das freguesias de Britelo, Gémeos e Ourilhe", "concelho": "Celorico  de Basto", "distrito": "Braga", "telef": "255323100", "fax": "255323101", "net": null, "email": "lojaturismo@cm-celoricobasto.pt", "observacoe": null, "x": 0.0, "y": 0.0, "cidadeid": 0, "lingua": null, "area_polig": "Britelo" }, "geometry": { "type": "Point", "coordinates": [ -7.99872, 41.39166 ] } }
+]
+}
